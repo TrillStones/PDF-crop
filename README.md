@@ -18,13 +18,15 @@ pip3 install "PyPDF2>=3,<4"
 
 ### 快速开始
 
-```bash
-# 处理一个 PDF
-python3 book_cut.py "Work Dir/20261018/书名.pdf"
+**基本用法**
 
-# 不带文件名：处理当前目录下所有 PDF（已生成的 -print.pdf 会跳过）
-python3 book_cut.py
+在仓库根目录（`book_cut.py` 所在的目录）下运行：
+
+```bash
+python3 book_cut.py "Work Dir/20261018/书名.pdf"
 ```
+
+文件名里有空格、括号等符号时，要用英文双引号把路径括起来。
 
 每处理一个 PDF，会在它旁边生成两个文件，原文件不会被修改：
 
@@ -34,6 +36,57 @@ python3 book_cut.py
 | `书名-print-report.txt` | 处理报告，内容和命令行输出一样 |
 
 再次运行会覆盖这两个文件。
+
+**推荐的使用流程**
+
+1. 先不加任何参数跑一遍：
+
+   ```bash
+   python3 book_cut.py "Work Dir/20261018/书名.pdf"
+   ```
+
+2. 看命令行输出或 `-print-report.txt`，确认三件事：
+   - “拍法”是否正确：横拍会左右竖切，竖拍会上下横切。
+   - “单页（不切）”列出的页面，是否确实是不该切的单页，例如封面、封底、扉页。
+   - 补了几张空白页，总页数是否合理。
+3. 打开 `-print.pdf`，用阅读器的“双页 + 封面单独显示”模式翻一遍。每张原来的双页，应该左半边在左、右半边在右地并排出现。
+4. 哪里不对，就按原 PDF 页号加参数重跑。具体写法见下面的常用案例和“手动指定怎么切”。
+
+**常用案例**
+
+| 情况 | 命令 |
+|---|---|
+| 书摊开横着拍或扫描，大部分页面是横的 | `python3 book_cut.py "书名.pdf"` |
+| 手机竖着拍，上下两页在一张照片里，大部分页面是竖的 | `python3 book_cut.py "书名.pdf"` |
+| 不切的单页比双页还多，拍法判反了 | `python3 book_cut.py "书名.pdf" --shot portrait`（或 `landscape`） |
+| 封面、封底等几页被误切了 | `python3 book_cut.py "书名.pdf" --page 1,2,27=single` |
+| 某几页应该切但没切 | `python3 book_cut.py "书名.pdf" --page 9,15-16=split` |
+| 中缝附近的字被切掉了，两边要多留一点 | `python3 book_cut.py "书名.pdf" --left-end 0.55 --right-start 0.45` |
+| 书比较厚，越往后中缝越偏 | `python3 book_cut.py "书名.pdf" --cut auto` |
+| 用自动模式，并加快切线移动 | `python3 book_cut.py "书名.pdf" --cut auto --auto-step 0.0008` |
+
+多个参数可以一起用，例如手动指定拍法、修正个别页，同时用自动切线：
+
+```bash
+python3 book_cut.py "书名.pdf" --shot portrait --page 1=single --page 9=split --cut auto
+```
+
+**批量处理**
+
+```bash
+# 一次处理多个指定的 PDF
+python3 book_cut.py "Work Dir/20261018/书名A.pdf" "Work Dir/20261019/书名B.pdf"
+
+# 处理某个文件夹里的所有 PDF：先进入该文件夹，不带文件名运行
+cd "Work Dir/20261018"
+python3 ../../book_cut.py
+```
+
+批量处理时要注意：
+
+- 不带文件名时，只处理当前文件夹里的 PDF，不会进入子文件夹，并且会自动跳过已经生成的 `-print.pdf`。
+- 直接写出多个文件名或用 `*.pdf` 通配时，不会自动跳过 `-print.pdf`，要避免把上次的结果再切一次。
+- `--shot` 和 `--page` 只能在一次处理一个 PDF 时使用。切线参数（`--cut`、`--left-end` 等）可以用于批量处理，对每个文件都生效。
 
 ### 处理规则
 
